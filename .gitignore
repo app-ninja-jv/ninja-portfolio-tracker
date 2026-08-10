@@ -1,0 +1,24 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+/build/
+dist/
+.venv/
+venv/
+.env
+
+# local market data — never commit vendor data.
+# NOTE the leading slash: a bare `data/` would also match src/tracker/data/
+/data/
+*.sqlite
+*.sqlite3
+*.parquet
+
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.DS_Store
+.idea/
+.vscode/

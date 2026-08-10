@@ -1,0 +1,33 @@
+{
+  "_comment": "Independently verified reference closes. Used by `tracker doctor` to validate a live yfinance pull. If these disagree by more than the tolerance, the usual causes are (1) raw vs adjusted close, (2) week-labelling off-by-one, (3) timezone drift on the final bar.",
+  "as_of": "2026-07-31",
+  "source": "Slickcharts, Nasdaq-100 components page, cross-checked against per-ticker YTD returns",
+  "verified_on": "2026-08-03",
+  "tolerance_pct": 0.5,
+  "closes": {
+    "NVDA": 200.75,
+    "AVGO": 389.28,
+    "MU": 823.03,
+    "SNDK": 1214.83,
+    "AMD": 476.15,
+    "INTC": 90.20,
+    "ASML": 1629.00,
+    "AMAT": 507.67,
+    "TXN": 275.74,
+    "ARM": 239.69,
+    "QCOM": 147.61
+  },
+  "ytd_pct": {
+    "NVDA": 7.64,
+    "AVGO": 12.48,
+    "MU": 188.37,
+    "SNDK": 411.77,
+    "AMD": 122.33,
+    "INTC": 144.44,
+    "ASML": 52.26,
+    "AMAT": 97.54,
+    "TXN": 58.94,
+    "ARM": 119.28,
+    "QCOM": -13.70
+  }
+}
