@@ -3,7 +3,7 @@
 **A portfolio tracker for a watchlist of tickers, scored against sector and index benchmarks, with a
 back-test that checks whether the scoring rule actually beats holding.**
 
-![Dashboard overview: one row per ticker with price, relative strength, extension, RSI, volatility, up/down volume, total score and verdict](docs/screenshot-overview.png)
+![Dashboard overview: one row per ticker with price, relative strength, extension, RSI, volatility, up/down volume, total score and verdict](docs/overview.png)
 
 [![CI](https://github.com/app-ninja-jv/ninja-portfolio-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/app-ninja-jv/ninja-portfolio-tracker/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
