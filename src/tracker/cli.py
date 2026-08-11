@@ -218,7 +218,7 @@ def cmd_verify(a) -> int:
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="tracker", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--version", action="version", version=f"equity-tracker {__version__}")
+    p.add_argument("--version", action="version", version=f"ninja-portfolio-tracker {__version__}")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     def common(sp):

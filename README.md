@@ -1,4 +1,4 @@
-# equity-tracker
+# ninja-portfolio-tracker
 
 **Auditable equity research dashboards.** Fetch weekly price data, score it, back-test it, and
 render a self-contained HTML dashboard — where **every claim in the output is asserted as a test**.
@@ -6,7 +6,7 @@ render a self-contained HTML dashboard — where **every claim in the output is 
 If a data refresh invalidates a written conclusion, the build breaks instead of shipping a false
 statement.
 
-[![CI](https://github.com/jovi-maverick/equity-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/jovi-maverick/equity-tracker/actions/workflows/ci.yml)
+[![CI](https://github.com/app-ninja-jv/ninja-portfolio-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/app-ninja-jv/ninja-portfolio-tracker/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org)
 
@@ -36,8 +36,8 @@ Nothing installed on the host. The image pins Python 3.12, which matters: the
 package needs 3.10+ and system Pythons are frequently older.
 
 ```bash
-git clone https://github.com/jovi-maverick/equity-tracker
-cd equity-tracker
+git clone https://github.com/app-ninja-jv/ninja-portfolio-tracker
+cd ninja-portfolio-tracker
 
 docker compose build
 docker compose run --rm test
@@ -75,7 +75,7 @@ pip install -e ".[live,dev]"
 pytest
 ```
 
-Or from PyPI: `pip install "equity-tracker[live]"`
+Or from PyPI: `pip install "ninja-portfolio-tracker[live]"`
 
 ---
 
@@ -186,6 +186,6 @@ Contributions welcome — particularly additional golden-value fixtures for non-
 
 ## License
 
-MIT © jovi-maverick
+MIT © app-ninja-jv
 
 Analysis tooling, not investment advice.

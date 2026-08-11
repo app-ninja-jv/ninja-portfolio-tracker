@@ -1,4 +1,4 @@
-# Task list — equity-tracker
+# Task list — ninja-portfolio-tracker
 
 **Workflow is Docker only. Do not use `make`** — the Makefile has been removed;
 zsh config on this machine intercepts `make test`/`make build`.
@@ -26,22 +26,66 @@ serves at localhost:8000 · nothing pushed to GitHub yet
 
 ---
 
-## 1 · Commit the Docker work + fixes
+## 2 · UI tweaks — NEXT SESSION
 
-```bash
-cd ~/Side_projects/equity-tracker
-rm -f Makefile .git/index.lock
-git add -A
-git commit -m "Docker workflow; fix verify/report ticker-set mismatch"
-```
+### 2a · User-selectable benchmark (choose one)
 
-- [ ] Committed
+Today "vs sector 13w" is hardwired to `SOXX` and there is no index comparison
+anywhere in the UI. Reading only the sector column is misleading — from the
+3 Aug study, 26-week relative strength:
 
----
+| | vs SOX | vs NDX |
+|---|---|---|
+| NVDA | −42.7% | −1.3% |
+| ASML | −38.0% | +23.4% |
+| TXN | −8.3% | +48.2% |
 
-## 2 · UI tweaks
+Sector-only made NVDA look broken and ASML/TXN look like laggards. Both wrong.
 
-- [ ] (list to be filled in — in progress)
+**Design — single-select benchmark, four suggestions:**
+
+| Option | Symbol | Reads as |
+|---|---|---|
+| Sector (semis) | `SOXX` | "beating its own industry" |
+| Nasdaq 100 | `QQQ` | "beating large-cap growth" |
+| S&P 500 | `SPY` | "beating the market" |
+| Custom | user-supplied | any cached symbol |
+
+Nasdaq-100 and QQQ are **the same exposure** — QQQ tracks the index, so do not
+offer both as separate options. One entry, labelled "Nasdaq 100 (QQQ)".
+
+Implementation notes:
+
+- `StrategyConfig` gains `benchmark: str = "SOXX"`; `score_at()` takes
+  `benchmark_bars` instead of `sector_bars` (rename — the argument was never
+  sector-specific, only the default was)
+- `rs_sector_13w` → `rs_benchmark_13w` in `evidence`. Grep for the old key in
+  `dashboard.py:101,145` and `benchmarks.py`
+- Renderer: compute scores against **all** benchmarks in one pass, emit each set
+  as JSON, and let a header `<select>` swap the visible one client-side. Keeps
+  the output a single static file — no rebuild per benchmark
+- Cache already holds SOXX, SPY and QQQ (`cmd_fetch` appends them), so no fetch
+  change needed
+- The **scoring** relative-strength component should stay on one declared
+  benchmark, recorded in the output. Letting the viewer change the benchmark
+  and silently restating the verdict would make the score irreproducible —
+  show the alternates as evidence, keep the verdict anchored
+
+### 2b · 104-week trendline per card, ticker vs benchmark
+
+Both series **rebased to 100** at the first bar — an absolute-price overlay of
+NVDA against SOXX is unreadable. Rebasing makes the divergence the subject.
+
+- Inline SVG, same construction as `volume_chart()` in `dashboard.py` — no CDN
+- Ticker in `var(--accent)`, benchmark in `var(--muted)` dashed
+- Optional second row: the **ratio line** (ticker ÷ benchmark, rebased). This is
+  the actual relative-strength picture and `pair_ratio_z` in
+  `features/indicators.py` already computes the z-score for it
+- Mark the 40w MA crossover points; that is what the trend component scores
+- Follows the same benchmark selection as 2a
+
+- [ ] 2a benchmark selector
+- [ ] 2b rebased 104-week trendline
 
 Reference: `docs/tracker_style.md` for the Midnight Slate tokens. Iterate with:
 
@@ -90,7 +134,7 @@ docker compose run --rm tracker backtest --mode allocation --json-out build/back
 ## 5 · Publish
 
 ```bash
-gh repo create equity-tracker --public --source=. --remote=origin --push
+gh repo create ninja-portfolio-tracker --public --source=. --remote=origin --push
 ```
 
 Then: **Settings → Pages → Source: GitHub Actions**
@@ -103,7 +147,7 @@ only by design. Let it go green **twice**, then uncomment the cron in
 - [ ] Pages source set to GitHub Actions
 - [ ] Two clean manual workflow runs
 - [ ] Cron enabled
-- [ ] Site live at `https://jovi-maverick.github.io/equity-tracker/`
+- [ ] Site live at `https://app-ninja-jv.github.io/ninja-portfolio-tracker/`
 
 Safety already wired: `tracker verify` runs before the Pages upload and **fails the build**,
 so a broken dashboard cannot publish. `doctor` is `continue-on-error` because reference

@@ -39,7 +39,7 @@ USER tracker
 
 # Sanity check at build time — fails the image rather than the first command
 RUN python -c "import tracker, sys; \
-print(f'equity-tracker {tracker.__version__} on Python {sys.version.split()[0]}')"
+print(f'ninja-portfolio-tracker {tracker.__version__} on Python {sys.version.split()[0]}')"
 
 ENTRYPOINT ["tracker"]
 CMD ["--help"]

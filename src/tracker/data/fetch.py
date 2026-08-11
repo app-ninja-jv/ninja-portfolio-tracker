@@ -41,7 +41,7 @@ def fetch_weekly(tickers: list[str], weeks: int = 104) -> dict[str, list[dict]]:
     except ImportError as exc:  # pragma: no cover
         raise ImportError(
             "yfinance is required for live fetching.\n"
-            "  pip install 'equity-tracker[live]'\n"
+            "  pip install 'ninja-portfolio-tracker[live]'\n"
             "Tests and offline use do not need it — see tests/fixtures/synthetic.py"
         ) from exc
 

@@ -3,13 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "equity-tracker"
+name = "ninja-portfolio-tracker"
 version = "0.1.0"
 description = "Auditable equity research dashboards — every claim in the output is asserted as a test"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
-authors = [{ name = "jovi-maverick" }]
+authors = [{ name = "app-ninja-jv" }]
 keywords = ["finance", "equities", "backtesting", "technical-analysis", "dashboard", "yfinance"]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -30,9 +30,9 @@ dev = ["pytest>=7.4", "ruff>=0.4"]
 tracker = "tracker.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/jovi-maverick/equity-tracker"
-Documentation = "https://jovi-maverick.github.io/equity-tracker/"
-Issues = "https://github.com/jovi-maverick/equity-tracker/issues"
+Homepage = "https://github.com/app-ninja-jv/ninja-portfolio-tracker"
+Documentation = "https://app-ninja-jv.github.io/ninja-portfolio-tracker/"
+Issues = "https://github.com/app-ninja-jv/ninja-portfolio-tracker/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tracker"]

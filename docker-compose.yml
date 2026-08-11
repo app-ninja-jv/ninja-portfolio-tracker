@@ -3,7 +3,7 @@
 services:
   tracker:
     build: .
-    image: equity-tracker:local
+    image: ninja-portfolio-tracker:local
     volumes:
       - ./data:/app/data          # market data cache (gitignored)
       - ./build:/app/build        # rendered HTML (gitignored)
@@ -16,7 +16,7 @@ services:
   # Test runner — overrides the entrypoint
   test:
     build: .
-    image: equity-tracker:local
+    image: ninja-portfolio-tracker:local
     entrypoint: ["pytest"]
     command: ["-q"]
     volumes:
@@ -27,7 +27,7 @@ services:
 
   lint:
     build: .
-    image: equity-tracker:local
+    image: ninja-portfolio-tracker:local
     entrypoint: ["ruff"]
     command: ["check", "src", "tests", "examples"]
     volumes:
@@ -38,7 +38,7 @@ services:
   # Serve build/ so you can view the dashboard exactly as Pages will
   serve:
     build: .
-    image: equity-tracker:local
+    image: ninja-portfolio-tracker:local
     entrypoint: ["python", "-m", "http.server", "8000", "--directory", "/app/build"]
     ports:
       - "8000:8000"
