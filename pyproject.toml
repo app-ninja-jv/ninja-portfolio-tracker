@@ -50,3 +50,8 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# the runtime version guard is deliberate: it fires when someone builds a venv
+# with an interpreter older than requires-python. Ruff sees it as dead code.
+"src/tracker/__init__.py" = ["UP036"]

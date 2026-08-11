@@ -30,25 +30,52 @@ feed is excluded from aggregates and flagged on its own card — never silently 
 
 ---
 
-## Quick start
+## Quick start — Docker (recommended)
 
-```bash
-pip install "equity-tracker[live]"
-
-tracker fetch  --tickers NVDA,AMD,INTC,ASML,TXN --weeks 104
-tracker doctor --golden tests/fixtures/golden_2026_07_31.json
-tracker report --out build/index.html
-open build/index.html
-```
-
-Or from source:
+Nothing installed on the host. The image pins Python 3.12, which matters: the
+package needs 3.10+ and system Pythons are frequently older.
 
 ```bash
 git clone https://github.com/jovi-maverick/equity-tracker
 cd equity-tracker
-pip install -e ".[live,dev]"
-pytest                      # 35 tests, no network needed
+
+docker compose build
+docker compose run --rm test
+docker compose run --rm --entrypoint python tracker examples/quickstart.py
 ```
+
+Then against real data:
+
+```bash
+docker compose run --rm tracker fetch --tickers NVDA,AMD,INTC,ASML,TXN --weeks 104
+docker compose run --rm tracker doctor
+docker compose run --rm tracker report --out build/index.html
+docker compose run --rm tracker verify --report build/index.html
+docker compose up serve
+```
+
+Dashboard at http://localhost:8000, rendered exactly as GitHub Pages will serve it.
+
+`data/` and `build/` are bind-mounted, so the SQLite cache and rendered HTML persist
+on the host while the container stays disposable. `src/` is mounted read-only, so code
+edits take effect without a rebuild. `TZ=UTC` is fixed in compose — week labelling must
+not drift with the host timezone.
+
+Also available: `docker compose run --rm lint` for ruff. On older Docker installs use
+`docker-compose` (hyphenated).
+
+## Quick start — pip
+
+Requires **Python 3.10+** and pip ≥ 21.3.
+
+```bash
+python3.12 -m venv .venv && source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -e ".[live,dev]"
+pytest
+```
+
+Or from PyPI: `pip install "equity-tracker[live]"`
 
 ---
 

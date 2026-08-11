@@ -1,0 +1,46 @@
+# Local dev. `data/` and `build/` are bind-mounted so the SQLite cache and the
+# rendered dashboard persist on the host — the container stays disposable.
+services:
+  tracker:
+    build: .
+    image: equity-tracker:local
+    volumes:
+      - ./data:/app/data          # market data cache (gitignored)
+      - ./build:/app/build        # rendered HTML (gitignored)
+      - ./src:/app/src:ro         # live source edits, no rebuild needed
+      - ./tests:/app/tests:ro
+      - ./examples:/app/examples:ro
+    environment:
+      TZ: UTC                     # week labelling must not drift with host TZ
+
+  # Test runner — overrides the entrypoint
+  test:
+    build: .
+    image: equity-tracker:local
+    entrypoint: ["pytest"]
+    command: ["-q"]
+    volumes:
+      - ./src:/app/src:ro
+      - ./tests:/app/tests:ro
+    environment:
+      TZ: UTC
+
+  lint:
+    build: .
+    image: equity-tracker:local
+    entrypoint: ["ruff"]
+    command: ["check", "src", "tests", "examples"]
+    volumes:
+      - ./src:/app/src:ro
+      - ./tests:/app/tests:ro
+      - ./examples:/app/examples:ro
+
+  # Serve build/ so you can view the dashboard exactly as Pages will
+  serve:
+    build: .
+    image: equity-tracker:local
+    entrypoint: ["python", "-m", "http.server", "8000", "--directory", "/app/build"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./build:/app/build:ro

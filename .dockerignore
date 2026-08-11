@@ -1,0 +1,16 @@
+.git/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+
+# never bake market data or output into the image
+data/
+build/
+*.sqlite
+*.sqlite3
+*.parquet

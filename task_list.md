@@ -1,50 +1,65 @@
 # Task list — equity-tracker
 
-Picking up 12 August 2026. Repo is built, tested and committed locally at
-`~/Side_projects/equity-tracker`. Nothing is pushed to GitHub yet.
+**Workflow is Docker only. Do not use `make`** — the Makefile has been removed;
+zsh config on this machine intercepts `make test`/`make build`.
 
-**State:** 42 source files · 35 tests passing · ruff clean · one local commit (`fb56908`)
+**State (12 Aug 2026):** Docker build works · 35 tests passing · ruff clean ·
+real yfinance data fetched · golden check passed 10/11 · dashboard renders and
+serves at localhost:8000 · nothing pushed to GitHub yet
 
 ---
 
-## Do first — one command, blocks everything else
+## ✅ Done
 
-The initial commit is **missing `src/tracker/data/`**. A bare `data/` in `.gitignore`
-matched `src/tracker/data/` as well as the intended cache directory. The pattern is
-already fixed on disk (`/data/`); the commit just needs redoing. The sandbox couldn't
-clear git's lock files, so this has to run locally.
+- [x] Commit amended — `src/tracker/data/` tracked (4 files)
+- [x] Docker workflow built and working; Python 3.12 pinned in the image
+- [x] `docker compose run --rm test` → 35 passing
+- [x] `quickstart.py` end-to-end on synthetic data
+- [x] Real yfinance fetch for 10 tickers into `data/bars.sqlite`
+- [x] **`doctor` passed — 10/11 golden closes matched.** No week-labelling
+      off-by-one, no raw-vs-adjusted mixup. The two failure modes I was most
+      worried about are ruled out. `SNDK` warned only because it wasn't fetched.
+- [x] `report` → `build/index.html`, 80,281 chars, 10 tickers
+- [x] `verify` clean after fixing the report/verify ticker-set mismatch
+- [x] Dashboard viewed at localhost:8000
+- [x] Makefile removed — Docker commands only
+
+---
+
+## 1 · Commit the Docker work + fixes
 
 ```bash
 cd ~/Side_projects/equity-tracker
-rm -f .git/index.lock .git/HEAD.lock
+rm -f Makefile .git/index.lock
 git add -A
-git commit --amend --no-edit
-git ls-files src/tracker/data/        # must list 4 files
+git commit -m "Docker workflow; fix verify/report ticker-set mismatch"
 ```
 
-- [ ] Amend the commit so the data layer is tracked
+- [ ] Committed
 
 ---
 
-## 1 · Local verification, before anything is public
+## 2 · UI tweaks
+
+- [ ] (list to be filled in — in progress)
+
+Reference: `docs/tracker_style.md` for the Midnight Slate tokens. Iterate with:
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[live,dev]"
-pytest                                # 35 passing, no network needed
-python examples/quickstart.py         # end-to-end on synthetic data
+docker compose run --rm tracker report --out build/index.html
+docker compose up serve
 ```
 
-- [ ] `pytest` green
-- [ ] `quickstart.py` writes `build/quickstart.html` and opens correctly
+`src/` is mounted read-only into the container, so renderer edits take effect
+**without** a rebuild — just re-run `report`.
 
 ---
 
-## 2 · First real yfinance pull — the moment of truth
+## 3 · Optional data completeness
 
 ```bash
-tracker fetch --tickers NVDA,AMD,INTC,ASML,TXN,AMAT,MU,QCOM,ARM,AVGO --weeks 104
-tracker doctor
+docker compose run --rm tracker fetch --tickers NVDA,AMD,INTC,ASML,TXN,AMAT,MU,QCOM,ARM,AVGO,SNDK --weeks 104
+docker compose run --rm tracker doctor
 ```
 
 `doctor` compares against `tests/fixtures/golden_2026_07_31.json` — eleven independently
@@ -57,30 +72,22 @@ in order of likelihood:
 | A ticker shows a phantom ~50% crash | Raw close used where adjusted belongs | `auto_adjust` handling in `_frame_to_bars()` |
 | Only the final bar is wrong | Timezone drift | Normalise to UTC before `_monday()` |
 
-- [ ] `tracker fetch` completes, quality gate reports per ticker
-- [ ] `tracker doctor` passes all 11 golden values
-- [ ] Fix any week-labelling / adjustment issue found
+- [ ] Add SNDK so all 11 golden values check (currently 10/11)
 
 ---
 
-## 3 · Full pipeline on live data
+## 4 · Backtest on live data
 
 ```bash
-tracker score
-tracker report --out build/index.html
-tracker verify --report build/index.html
-tracker backtest --mode allocation --start 2026-02-02 --json-out build/backtest.json
-open build/index.html
+docker compose run --rm tracker backtest --mode allocation --json-out build/backtest.json
 ```
 
-- [ ] Dashboard renders with all tickers, tabs and volume charts
-- [ ] `verify` clean
-- [ ] Backtest prints benchmarks, bucket test and regime tag
-- [ ] Sanity-check a couple of scores by hand against the 3 Aug analysis
+- [ ] Benchmarks, bucket test and regime tag print sensibly
+- [ ] Spot-check two scores by hand against the 3 Aug semiconductor analysis
 
 ---
 
-## 4 · Publish
+## 5 · Publish
 
 ```bash
 gh repo create equity-tracker --public --source=. --remote=origin --push

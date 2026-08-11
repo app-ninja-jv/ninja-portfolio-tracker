@@ -200,9 +200,13 @@ def cmd_backtest(a) -> int:
 
 # ------------------------------------------------------------------ verify
 def cmd_verify(a) -> int:
+    # Benchmarks (sector ETF, index) are cached for relative-strength maths but are
+    # deliberately NOT portfolio holdings, so `report` excludes them. `verify` must
+    # apply the same filter or it demands tickers the render was never meant to show.
+    skip = {DEFAULT.data.sector_etf, *DEFAULT.data.benchmarks}
     with Cache(a.cache) as cache:
-        bars = _load(cache, _tickers(a.tickers), a.weeks)
-    bars = {t: b for t, b in bars.items() if b}
+        allbars = _load(cache, _tickers(a.tickers), a.weeks)
+    bars = {t: b for t, b in allbars.items() if b and t not in skip}
     html = Path(a.report).read_text() if a.report and Path(a.report).exists() else None
     rep = run_all(bars, html=html,
                   golden=a.golden if a.golden and Path(a.golden).exists() else None)

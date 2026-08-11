@@ -6,6 +6,7 @@ Full specification in docs/tracker_style.md. Design decisions:
   * tabular numerals everywhere so digits align and don't jitter
   * system font stack, no web fonts, works offline
 """
+from __future__ import annotations
 
 CSS = """
 :root{
