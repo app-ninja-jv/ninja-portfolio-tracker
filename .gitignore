@@ -15,6 +15,10 @@ venv/
 *.sqlite3
 *.parquet
 
+# personal working notes — not part of the published repo
+/task_list.md
+/public_distribution.md
+
 .pytest_cache/
 .ruff_cache/
 .coverage
