@@ -5,7 +5,29 @@ zsh config on this machine intercepts `make test`/`make build`.
 
 **State (12 Aug 2026):** Docker build works · 35 tests passing · ruff clean ·
 real yfinance data fetched · golden check passed 10/11 · dashboard renders and
-serves at localhost:8000 · nothing pushed to GitHub yet
+serves at localhost:8000 · **pushed to GitHub** · Pages not yet enabled
+
+## 👉 You are here
+
+1. **Settings → Pages → Source: `GitHub Actions`** ← do this before running anything
+2. Actions → Refresh dashboard → Run workflow (twice, green both times)
+3. Uncomment the cron
+4. Then UI tweaks (section 2)
+
+---
+
+## Names and locations — worth not getting confused by
+
+| Thing | Value |
+|---|---|
+| Local folder | `~/Side_projects/equity-tracker` *(old name, deliberately not renamed)* |
+| GitHub repo | `github.com/app-ninja-jv/ninja-portfolio-tracker` |
+| Python dist name | `ninja-portfolio-tracker` |
+| Import package + CLI | `tracker` *(unchanged — nothing imports the dist name)* |
+| Branch | `main` |
+| Pages URL | `https://app-ninja-jv.github.io/ninja-portfolio-tracker/` |
+
+Folder name and repo name do not need to match; git tracks the remote by URL.
 
 ---
 
@@ -23,6 +45,25 @@ serves at localhost:8000 · nothing pushed to GitHub yet
 - [x] `verify` clean after fixing the report/verify ticker-set mismatch
 - [x] Dashboard viewed at localhost:8000
 - [x] Makefile removed — Docker commands only
+- [x] **Renamed** `equity-tracker` → `ninja-portfolio-tracker`, owner
+      `jovi-maverick` → `app-ninja-jv` (10 files; strings only — dist name,
+      URLs, docker image tag, LICENSE holder). Import package and console
+      script left as `tracker` on purpose, so no imports broke.
+- [x] Branch `master` → `main`
+- [x] **Pushed to GitHub** — 3 commits, 43 files, no `data/` or `build/`
+      (`git push -u origin main`, tracking set)
+
+**Auth note for next time:** HTTPS + Personal Access Token (classic). The token
+needs **both `repo` and `workflow`** scopes — `repo` alone is rejected on the
+`.github/workflows/` files with *"refusing to allow a Personal Access Token to
+create or update workflow ... without `workflow` scope"*. Token expires in
+90 days (~10 Nov 2026); at that point either mint a new one or switch to
+`gh auth login`, which handles renewal. If a push fails with *"Invalid username
+or token"* after a token change, macOS cached the old one:
+
+```bash
+printf "protocol=https\nhost=github.com\n\n" | git credential-osxkeychain erase
+```
 
 ---
 
@@ -131,31 +172,47 @@ docker compose run --rm tracker backtest --mode allocation --json-out build/back
 
 ---
 
-## 5 · Publish
+## 5 · Publish  ← IN PROGRESS
 
-```bash
-gh repo create ninja-portfolio-tracker --public --source=. --remote=origin --push
-```
-
-Then: **Settings → Pages → Source: GitHub Actions**
-
-Run *Actions → Refresh dashboard → Run workflow* manually. It is `workflow_dispatch`
-only by design. Let it go green **twice**, then uncomment the cron in
-`.github/workflows/refresh.yml`.
-
-- [ ] Repo created and pushed
-- [ ] Pages source set to GitHub Actions
+- [x] Repo created and pushed
+- [ ] **Pages source set to GitHub Actions** ← next action
 - [ ] Two clean manual workflow runs
 - [ ] Cron enabled
 - [ ] Site live at `https://app-ninja-jv.github.io/ninja-portfolio-tracker/`
 
-Safety already wired: `tracker verify` runs before the Pages upload and **fails the build**,
-so a broken dashboard cannot publish. `doctor` is `continue-on-error` because reference
-prices age — it warns rather than blocks.
+**Settings → Pages → Source: `GitHub Actions`.** Not "Deploy from a branch" — the
+workflow uses `upload-pages-artifact` / `deploy-pages`, which only work with the
+Actions source. Set this *before* the first run: otherwise `build` passes and
+`deploy` fails at the last step with a permissions error that doesn't name the
+real cause.
+
+Then *Actions → Refresh dashboard → Run workflow*. `workflow_dispatch` only by
+design. Two green runs, then uncomment lines 11–12 of
+`.github/workflows/refresh.yml`.
+
+Reading a failed run:
+
+| Step | If red |
+|---|---|
+| Install | dependency resolution — rare |
+| **Fetch** | most likely. Cold yfinance pull of 13 symbols (10 + SOXX/SPY/QQQ). Rate limit → re-run |
+| Doctor | `continue-on-error: true` — yellow, never blocks. Golden closes are 31 July and ageing |
+| Render | renderer bug |
+| **Verify** | hard gate. Blocks the upload — a broken dashboard cannot publish |
+| deploy | almost always Pages source not set to Actions |
+
+Two known-cosmetic issues that will show on the live site:
+
+- [ ] `refresh.yml:46` still passes `--title "Equity Tracker"` — the header will
+      show the old name. Change to `"Ninja Portfolio Tracker"`
+- [ ] Cards render with **blank company name and blank sector** — `_meta_stub()`
+      in `cli.py:140` returns empty strings. Fold into the section 2 UI work
+- [ ] `refresh.yml:10` default tickers omit **SNDK**, which is why `doctor` is
+      10/11. Add it here and in the fetch (section 3)
 
 ---
 
-## 5 · Analysis backlog (independent of the repo work)
+## 6 · Analysis backlog (independent of the repo work)
 
 Carried over from 3 August. See `docs/analysis_deep.md` for the per-ticker method.
 
@@ -171,7 +228,7 @@ Carried over from 3 August. See `docs/analysis_deep.md` for the per-ticker metho
 
 ---
 
-## 6 · Next build phase
+## 7 · Next build phase
 
 Order matters here — the verification harness is the bug detector, so it exists before
 any modelling.
