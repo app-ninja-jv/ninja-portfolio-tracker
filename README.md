@@ -1,9 +1,9 @@
 # ninja-portfolio-tracker
 
-Weekly equity research pipeline: fetch → score → back-test → static HTML dashboard.
+**A portfolio tracker for a watchlist of tickers, scored against sector and index benchmarks, with a
+back-test that checks whether the scoring rule actually beats holding.**
 
-Every claim rendered into the output is asserted as a test. A data refresh that invalidates a
-written conclusion fails the build rather than publishing a false statement.
+![Dashboard overview: one row per ticker with price, relative strength, extension, RSI, volatility, up/down volume, total score and verdict](docs/screenshot-overview.png)
 
 [![CI](https://github.com/app-ninja-jv/ninja-portfolio-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/app-ninja-jv/ninja-portfolio-tracker/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -11,18 +11,32 @@ written conclusion fails the build rather than publishing a false statement.
 
 ---
 
-## Scope
+## What it answers
 
-Weekly OHLCV bars, 104-week history, 14-day decision cadence. Five-component scoring rule mapped to
-BUY / HOLD / TRIM / SELL. Walk-forward back-test against five comparators. Output is a single
-self-contained HTML file: no server, no build step, no CDN.
+**Is this name actually doing well, or is its sector just doing well?** Absolute return hides the
+answer. NVDA in mid-2026 was 42.7% behind the semiconductor index over 26 weeks and 1.3% behind the
+Nasdaq 100 over the same window — two very different readings of the same stock.
 
-A verification harness runs after every pipeline execution: independent recomputation through
-separate code paths, look-ahead audit at each decision date, ledger rebuild from the event log,
-capital conservation, golden-value cross-check, and claim assertion.
+**What does the rule say to do, and why?** Every ticker gets BUY / HOLD / TRIM / SELL from five
+weighted signals, with each component and its underlying number shown on the card. The score
+summarises the evidence rather than replacing it, so disagreeing with it is straightforward.
 
-Tickers failing the data quality gate are quarantined: excluded from aggregates, flagged on their
-own card, never forward-filled.
+![Per-ticker card: score components broken out with their contributions, the evidence table of underlying indicator values, and a 24-week volume chart coloured by weekly price direction](docs/screenshot-card.png)
+
+**Would following the rule have beaten just holding?** Each back-test runs per ticker against five
+baselines and is tagged with the market regime it ran in. A result without its regime is not
+interpretable, and a basket average hides which names carried it.
+
+Output is one self-contained HTML file. No server, no build step, no CDN — it opens offline and
+hosts free on GitHub Pages.
+
+## What makes results trustworthy
+
+A verification harness runs after every execution and fails the build rather than publishing. It
+recomputes indicators through separate code paths, checks that no decision used a price from after
+the decision date, rebuilds the portfolio from the event log independently, and asserts every
+written claim as a boolean. Tickers with stale or broken data are quarantined and flagged, never
+quietly forward-filled.
 
 ---
 
@@ -71,7 +85,7 @@ pip install -e ".[live,dev]" && pytest
 
 ## Scoring rule
 
-Five integer components, summed. Thresholds in `StrategyConfig`; nothing is inline.
+Five integer components, summed. Thresholds live in `StrategyConfig`; nothing is inline.
 
 | Component | Range | Basis |
 |---|---|---|
@@ -99,7 +113,7 @@ The bucket test reports mean forward return by verdict. Skill produces BUY > HOL
 non-monotonic buckets are frequently more informative than the headline return.
 
 Results are stored per ticker with a regime tag. Basket aggregates are a reporting convenience, not
-a conclusion — the output is a distribution of edges.
+a conclusion; the output is a distribution of edges.
 
 ---
 
