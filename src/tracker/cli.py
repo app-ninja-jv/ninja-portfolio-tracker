@@ -107,10 +107,16 @@ def cmd_report(a) -> int:
     with Cache(a.cache) as cache:
         allbars = _load(cache, _tickers(a.tickers), a.weeks)
         sector = cache.get_bars(DEFAULT.data.sector_etf, a.weeks)
+        # Chart comparison only. The score's relative-strength component stays on the
+        # sector ETF above, so this never moves a verdict.
+        bench = cache.get_bars(a.benchmark, a.weeks)
     bars = {t: b for t, b in allbars.items() if b and t not in skip}
     if not bars:
         print("no cached data — run `tracker fetch` first", file=sys.stderr)
         return 2
+    if not bench:
+        print(f"warning: {a.benchmark} not cached — cards render without the "
+              f"comparison chart. Run `tracker fetch` to pull it.", file=sys.stderr)
 
     quality = {t: check(t, b, min_weeks=a.min_weeks) for t, b in bars.items()}
     asof = max(b[-1]["date"] for b in bars.values())
@@ -121,7 +127,8 @@ def cmd_report(a) -> int:
             scores[t] = s
 
     html = render(scores, bars, quality=quality, asof=asof,
-                  title=a.title, meta=_meta_stub(bars))
+                  title=a.title, meta=_meta_stub(bars),
+                  bench_bars=bench, benchmark=a.benchmark)
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html)
@@ -247,6 +254,9 @@ def build_parser() -> argparse.ArgumentParser:
     common(r)
     r.add_argument("--out", default="build/index.html")
     r.add_argument("--title", default="Equity Tracker")
+    r.add_argument("--benchmark", default=DEFAULT.data.benchmarks[-1],
+                   help="comparison symbol for the per-card trend chart (default QQQ). "
+                        "Must already be in the cache. Does not affect scoring.")
     r.set_defaults(fn=cmd_report)
 
     b = sub.add_parser("backtest", help="walk-forward backtest with benchmarks")

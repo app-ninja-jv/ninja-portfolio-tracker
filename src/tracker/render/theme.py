@@ -104,14 +104,24 @@ tr.hl{background:rgba(96,165,250,.07)}
 .tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .pane[hidden]{display:none}
 @media(max-width:640px){.tab{padding:6px 10px;font-size:11.5px}}
-/* volume chart */
-.volwrap{margin:18px 0 4px;background:var(--inset);border:1px solid var(--border-soft);
+/* inline charts — volume bars and the ticker-vs-benchmark trend line */
+.volwrap,.trendwrap{margin:18px 0 4px;background:var(--inset);border:1px solid var(--border-soft);
  border-radius:var(--radius-sm);padding:10px 12px 8px}
-.volhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;gap:10px}
-.volstat{font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.trendwrap{margin:0 0 20px}
+.volhead,.trendhead{display:flex;justify-content:space-between;align-items:baseline;
+ margin-bottom:6px;gap:10px}
+.volstat,.trendstat{font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;
+ white-space:nowrap}
 .volwrap svg{display:block;height:96px}
-.volfoot{display:flex;justify-content:space-between;font-size:9.5px;color:var(--faint);
- margin-top:3px;font-variant-numeric:tabular-nums}
+/* uniform scaling here, unlike the volume bars: squashing the aspect ratio would
+   distort the crossover dots into ellipses and skew the slope of every line */
+.trendwrap svg{display:block;width:100%;height:auto}
+.trendwrap .ax{fill:var(--faint);font-size:7px;font-variant-numeric:tabular-nums}
+.volfoot,.trendfoot{display:flex;justify-content:space-between;font-size:9.5px;
+ color:var(--faint);margin-top:3px;font-variant-numeric:tabular-nums;gap:12px}
+.trendfoot .mut{text-align:center}
+@media(max-width:640px){.trendhead{flex-direction:column;gap:2px}
+ .trendstat{white-space:normal}}
 .cm{text-align:center;font-size:11px;padding:7px 4px;border:1px solid var(--bg)}
 .foot{margin-top:46px;padding-top:22px;border-top:1px solid var(--border);
  font-size:12px;color:var(--faint);line-height:1.75}

@@ -9,6 +9,7 @@ score is a summary of the evidence, not a replacement for it.
 from __future__ import annotations
 
 import json
+import math
 from datetime import datetime
 
 from ..features import indicators as ind
@@ -85,6 +86,120 @@ def volume_chart(bars: list[dict], weeks: int = 24) -> str:
 </div>"""
 
 
+def trend_chart(bars: list[dict], bench_bars: list[dict] | None, ticker: str,
+                benchmark: str, weeks: int = 104, ma_win: int = 26) -> str:
+    """Ticker vs benchmark, both rebased to 100 at the first shared bar.
+
+    Rebasing is the point. An absolute-price overlay of a $180 stock against a $580
+    ETF hides the divergence, which is the only thing this chart exists to show.
+
+    Because rebasing is a constant divide, price/MA crossovers fall on exactly the
+    same bars as they do on raw closes — the markers are not an approximation of the
+    real crossovers, they are the real crossovers.
+
+    Evidence only: the verdict stays anchored to the sector ETF declared in the
+    score. A viewer switching the comparison must never silently restate the score.
+    """
+    if not bench_bars:
+        return ""
+    db = {b["date"]: b["close"] for b in bench_bars}
+    rows = [(b["date"], b["close"], db[b["date"]]) for b in bars if b["date"] in db][-weeks:]
+    if len(rows) < ma_win + 4 or not rows[0][1] or not rows[0][2]:
+        return ""
+
+    n = len(rows)
+    t0, b0 = rows[0][1], rows[0][2]
+    ti = [r[1] / t0 * 100 for r in rows]
+    bi = [r[2] / b0 * 100 for r in rows]
+    ms = ind.sma_series(ti, ma_win)
+
+    # Log scale, deliberately. On a linear axis a ticker that quadruples flattens its
+    # own first eighteen months into a line on the floor — INTC did exactly that, and
+    # every crossover marker in that stretch became unreadable. In log space equal
+    # vertical distance is equal percentage move, which is the only reading that makes
+    # sense for two rebased series. Rebased indices are strictly positive, so the
+    # transform is always defined; the guard below is belt-and-braces.
+    vals = ti + bi + [m for m in ms if m is not None]
+    if min(vals) <= 0:
+        return ""
+    lo, hi = math.log(min(vals)), math.log(max(vals))
+    pad = (hi - lo) * 0.06 or 0.02
+    lo, hi = lo - pad, hi + pad
+
+    W, H, PAD_L, PAD_R, PAD_T, PAD_B = 520, 150, 4, 4, 10, 12
+    pw, ph = W - PAD_L - PAD_R, H - PAD_T - PAD_B
+
+    def px(i):
+        return PAD_L + i * pw / (n - 1)
+
+    def py(v):
+        return PAD_T + (hi - math.log(v)) / (hi - lo) * ph
+
+    def path(pairs):
+        return "M" + " L".join(f"{px(i):.1f},{py(v):.1f}" for i, v in pairs)
+
+    p_tkr = path(list(enumerate(ti)))
+    p_bmk = path(list(enumerate(bi)))
+    p_ma = path([(i, m) for i, m in enumerate(ms) if m is not None])
+
+    # Crossovers of price over its own 26w MA. Deliberately the 26w and not the 40w:
+    # nothing in the score touches the 40w — it is a display column only — whereas the
+    # 26w is both half of the trend component and the line `extension` measures from.
+    dots, ups, dns = "", 0, 0
+    for i in range(1, n):
+        a, b = ms[i - 1], ms[i]
+        if a is None or b is None:
+            continue
+        prev, cur = ti[i - 1] - a, ti[i] - b
+        if prev < 0 <= cur:
+            ups += 1
+        elif prev >= 0 > cur:
+            dns += 1
+        else:
+            continue
+        fill = "var(--pos)" if cur >= 0 else "var(--neg)"
+        dots += (f'<circle cx="{px(i):.1f}" cy="{py(ti[i]):.1f}" r="3" fill="{fill}" '
+                 f'stroke="var(--inset)" stroke-width="1">'
+                 f'<title>{rows[i][0]}  crossed {"above" if cur >= 0 else "below"} '
+                 f'the {ma_win}w MA</title></circle>')
+
+    ac, bc = [r[1] for r in rows], [r[2] for r in rows]
+    x13, x26 = ind.excess_return(ac, bc, 13), ind.excess_return(ac, bc, 26)
+    xfull = ti[-1] - bi[-1]
+    y100 = py(100.0)
+
+    return f"""
+<div class="trendwrap">
+  <div class="trendhead">
+    <span class="ml">{ticker} vs {benchmark} &middot; {n}w &middot; rebased 100 &middot; log</span>
+    <span class="trendstat">excess
+      13w <b class="{_cl(x13)}">{_n(x13, 1, '', True)}</b> &nbsp;&middot;&nbsp;
+      26w <b class="{_cl(x26)}">{_n(x26, 1, '', True)}</b> &nbsp;&middot;&nbsp;
+      {n}w <b class="{_cl(xfull)}">{_n(xfull, 1, '', True)}</b> pt</span>
+  </div>
+  <svg viewBox="0 0 {W} {H}" role="img"
+       aria-label="{ticker} against {benchmark}, {n} weeks, both rebased to 100">
+    <line x1="{PAD_L}" y1="{y100:.1f}" x2="{W-PAD_R}" y2="{y100:.1f}" stroke="var(--border)"
+          stroke-width="1" stroke-dasharray="2 4" vector-effect="non-scaling-stroke"/>
+    <text x="{W - PAD_R - 2}" y="{y100 - 3:.1f}" class="ax" text-anchor="end">100</text>
+    <path d="{p_ma}" fill="none" stroke="var(--accent)" stroke-width="1" opacity=".42"
+          stroke-dasharray="1 2" vector-effect="non-scaling-stroke"/>
+    <path d="{p_bmk}" fill="none" stroke="var(--muted)" stroke-width="1.3"
+          stroke-dasharray="4 3" vector-effect="non-scaling-stroke">
+      <title>{benchmark} rebased</title></path>
+    <path d="{p_tkr}" fill="none" stroke="var(--accent)" stroke-width="1.8"
+          stroke-linejoin="round" vector-effect="non-scaling-stroke">
+      <title>{ticker} rebased</title></path>
+    {dots}
+  </svg>
+  <div class="trendfoot"><span>{rows[0][0]}</span>
+    <span class="mut"><b style="color:var(--accent)">{ticker}</b> solid &middot;
+      {benchmark} dashed &middot; {ups + dns} {ma_win}w MA cross{'' if ups + dns == 1 else 'es'}
+      ({ups} up / {dns} down)</span>
+    <span>{rows[-1][0]}</span></div>
+</div>"""
+
+
 def _overview_rows(scores, bars_by_ticker, meta) -> str:
     out = ""
     for t, s in scores.items():
@@ -110,7 +225,7 @@ def _overview_rows(scores, bars_by_ticker, meta) -> str:
     return out
 
 
-def _card(t, s, bars, meta, quality) -> str:
+def _card(t, s, bars, meta, quality, bench_bars=None, benchmark="") -> str:
     c = [b["close"] for b in bars]
     px = c[-1]
     ext40 = (px / ind.sma(c, 40) - 1) * 100 if ind.sma(c, 40) else None
@@ -150,6 +265,7 @@ def _card(t, s, bars, meta, quality) -> str:
     <div class="metric"><span class="ml">U/D vol 8w</span><span class="mv {_cl((ev.get('ud_volume_8w') or 1)-1)}">{_n(ev.get('ud_volume_8w'),2)}</span></div>
     <div class="metric"><span class="ml">max DD</span><span class="mv neg">{_n(ind.max_drawdown(c),1,'%')}</span></div>
   </div>
+  {trend_chart(bars, bench_bars, t, benchmark)}
   <div class="csplit">
     <div>
       <h4>Score components</h4>
@@ -179,7 +295,8 @@ def _card(t, s, bars, meta, quality) -> str:
 
 def render(scores: dict, bars_by_ticker: dict, *, meta: dict | None = None,
            quality: dict | None = None, title: str = "Equity Tracker",
-           asof: str | None = None, notes: list[str] | None = None) -> str:
+           asof: str | None = None, notes: list[str] | None = None,
+           bench_bars: list[dict] | None = None, benchmark: str = "QQQ") -> str:
     meta = meta or {}
     quality = quality or {}
     asof = asof or datetime.utcnow().strftime("%Y-%m-%d")
@@ -195,7 +312,8 @@ def render(scores: dict, bars_by_ticker: dict, *, meta: dict | None = None,
         f'<span class="tdot"></span>{t}</button>'
         for i, t in enumerate(tickers))
 
-    cards = "".join(_card(t, scores[t], bars_by_ticker[t], meta, quality) for t in tickers)
+    cards = "".join(_card(t, scores[t], bars_by_ticker[t], meta, quality,
+                          bench_bars, benchmark) for t in tickers)
 
     counts = {v: sum(1 for s in scores.values() if s.verdict == v)
               for v in ("BUY", "HOLD", "TRIM", "SELL")}
@@ -255,6 +373,12 @@ and 26-week MA), momentum (MACD histogram sign, RSI band), extension over the 26
 MA, up/down volume over 8 weeks, 13-week relative strength versus the sector ETF.
 Decisions use bars dated strictly before the decision date. Unavailable indicators
 contribute 0 and are listed on the card rather than defaulting to a negative.</p>
+<p>Each card carries a 104-week line of the ticker against <b>{benchmark}</b>, both
+rebased to 100 at the first shared bar so the divergence is readable rather than the
+price levels. Dots mark where price crossed its own 26-week moving average — the line
+the trend and extension components are measured against. That chart is evidence: the
+score's relative-strength component stays measured against the sector ETF, so changing
+what you compare against never silently restates a verdict.</p>
 <h4>Reproducing this</h4>
 <p><code>pip install ninja-portfolio-tracker[live]</code> &middot;
 <code>tracker fetch --tickers ...</code> &middot; <code>tracker doctor</code> &middot;
